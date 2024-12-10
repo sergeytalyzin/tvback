@@ -10,30 +10,33 @@ app.use(express.json());
 
 app.get('/take', async (req, res) => {
     const url = req.query.url; // URL исходного плейлиста
-    if (url) {
-        try {
-            const response = await axios.get(url, { responseType: 'text' }); // Получаем содержимое плейлиста
+    if (!url) {
+        return res.status(400).json({ error: 'URL query parameter is required' });
+    }
 
-            // Извлекаем базовый URL из переданного URL
-            const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+    try {
+        // Получаем содержимое плейлиста как текст
+        const response = await axios.get(url, { responseType: 'text' });
 
-            // Заменяем относительные пути в плейлисте на абсолютные
-            const updatedPlaylist = response.data.replace(
-                /(^(?!http).+\.ts)/gm, // Находим строки с относительными путями (например, `tracks-v1a1/mono.ts`)
-                `${baseUrl}$1`         // Подменяем на полный путь
-            );
+        // Определяем базовый URL для фрагментов
+        const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
 
-            // Устанавливаем корректные заголовки и возвращаем измененный плейлист
-            res.set('Content-Type', 'application/vnd.apple.mpegurl');
-            res.send(updatedPlaylist);
-        } catch (error) {
-            console.error('Error fetching or processing playlist:', error.message);
-            res.status(500).json({ error: 'Failed to fetch the playlist' });
-        }
-    } else {
-        res.status(400).json({ error: 'URL query parameter is required' });
+        // Заменяем относительные пути в плейлисте на абсолютные
+        const updatedPlaylist = response.data.replace(
+            /(^(?!http).+\.ts)/gm, // Находим строки с относительными путями (например, `tracks-v1a1/mono.ts`)
+            `${baseUrl}$1`         // Подставляем базовый URL перед относительным путем
+        );
+
+        // Возвращаем измененный плейлист
+        res.set('Content-Type', 'application/vnd.apple.mpegurl');
+        res.send(updatedPlaylist);
+        console.log('updatedPlaylist',updatedPlaylist)
+    } catch (error) {
+        console.error('Error fetching or processing playlist:', error.message);
+        res.status(500).json({ error: 'Failed to fetch the playlist' });
     }
 });
+
 
 // Новый маршрут для проксирования
 app.get('/proxy', async (req, res) => {
