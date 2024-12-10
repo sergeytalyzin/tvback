@@ -9,33 +9,33 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/take', async (req, res) => {
-    const url = req.query.url; // URL исходного плейлиста
+    const url = req.query.url; // Получаем URL исходного плейлиста
     if (!url) {
         return res.status(400).json({ error: 'URL query parameter is required' });
     }
 
     try {
-        // Получаем содержимое плейлиста как текст
+        // Загружаем плейлист
         const response = await axios.get(url, { responseType: 'text' });
 
-        // Определяем базовый URL для фрагментов
+        // Определяем базовый URL исходного плейлиста
         const baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
 
-        // Заменяем относительные пути в плейлисте на абсолютные
+        // Заменяем относительные пути на абсолютные
         const updatedPlaylist = response.data.replace(
-            /(^(?!http).+\.ts)/gm, // Находим строки с относительными путями (например, `tracks-v1a1/mono.ts`)
-            `${baseUrl}$1`         // Подставляем базовый URL перед относительным путем
+            /(^(?!http).+\.m3u8\?token=.*)/gm, // Регулярное выражение для захвата относительных путей с параметром `token`
+            `${baseUrl}$1` // Подставляем базовый URL
         );
 
-        // Возвращаем измененный плейлист
+        // Устанавливаем заголовки и отправляем обновленный плейлист
         res.set('Content-Type', 'application/vnd.apple.mpegurl');
         res.send(updatedPlaylist);
-        console.log('updatedPlaylist',updatedPlaylist)
     } catch (error) {
-        console.error('Error fetching or processing playlist:', error.message);
-        res.status(500).json({ error: 'Failed to fetch the playlist' });
+        console.error('Error processing playlist:', error.message);
+        res.status(500).json({ error: 'Failed to process playlist' });
     }
 });
+
 
 
 // Новый маршрут для проксирования
