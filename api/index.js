@@ -23,9 +23,9 @@ app.get('/take', async (req, res) => {
 
         // Заменяем относительные пути на абсолютные
         const updatedPlaylist = response.data.replace(
-            /(^(?!https).+\.m3u8\?token=.*)/gm, // Регулярное выражение для захвата относительных путей с параметром `token`
+            /(^(?!http).+\.m3u8\?token=.*)/gm, // Регулярное выражение для захвата относительных путей с параметром `token`
             `${baseUrl}$1` // Подставляем базовый URL
-        );
+        ).replace(/http:\/\//g, 'https://');
 
         // Устанавливаем заголовки и отправляем обновленный плейлист
         res.set('Content-Type', 'application/vnd.apple.mpegurl');
